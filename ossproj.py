@@ -198,7 +198,7 @@ def print_timetable(combo):
     time_slots = sorted(time_slots)
 
     print("🕒   시간       Mon           Tue           Wed           Thu           Fri")
-    print("--------------------------------------------------------------------------")
+    print("---------------------------------------------------------------------------")
 
     for start, end in time_slots:
         row = f"{start:>5.1f}~{end:<5.1f}  "
@@ -209,7 +209,7 @@ def print_timetable(combo):
 
     # 마지막 줄에 과목명, 콰목코드 출력
     subjects = [sec.subject for sec in combo]
-    print("\n 과목명명   : ", ", ".join(subjects))
+    print("\n 과목명   : ", ", ".join(subjects))
     codes = [sec.code for sec in combo]
     print("\n 과목코드 : ", ", ".join(codes))
 
@@ -222,7 +222,7 @@ def main():
     grouped = group_sections_by_subject(sections)
     combinations = generate_combinations(grouped)
     valid_combinations = filter_valid_combinations(combinations)
-    print(f"✅ 충돌 없는 조합 수: {len(valid_combinations)}")
+    print(f"✅ 충돌 없는 조합 수: {len(valid_combinations)}\n")
 
     # 조건 선택 후 정렬
     if option == 1:
@@ -233,7 +233,14 @@ def main():
         sorted_combos = sort_by_short_gaps(valid_combinations)
     elif option == 3:
         print("🔹 공강 요일이 있는 시간표를 생성합니다.")
-        sorted_combos = sort_by_free_day(valid_combinations)
+        # 💡 공강 요일이 있는 조합이 하나도 없을 경우 자동 대체
+        has_free_day = any(len(summarize_schedule(combo)) < 5 for combo in valid_combinations)
+        if not has_free_day:
+            print("⚠️ 공강 요일이 있는 조합이 없습니다. 대신 '수업 사이 빈 시간이 적은 시간표'로 대체됩니다.")
+            sorted_combos = sort_by_short_gaps(valid_combinations)
+        else:
+            sorted_combos = sort_by_free_day(valid_combinations)
+
     print("\n🗓️ 최적 시간표 추천 결과 (상위 5개):")
     i = 1
     for combo in sorted_combos[:5]:
