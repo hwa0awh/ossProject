@@ -21,7 +21,7 @@ def load_subjects_from_file(filename):
 
                 # 시간표 정보 저장
                 time_slots = []
-                # 첫 번째 요일-시간 정보 저장
+                # 첫 번째 요일 시간 정보 저장
                 time_slots.append((parts[3], float(parts[4]), float(parts[5])))
                 # 두 번째 요일 정보가 있다면 추가 저장
                 if len(parts) == 9:
@@ -91,7 +91,7 @@ def group_sections_by_subject(sections):
 
 # 각 과목에서 한 분반만 선택해 조합을 만드는 함수 (백트래킹 사용)
 def generate_combinations(grouped):
-    subjects = list(grouped.keys())   # 고목명 리스트
+    subjects = list(grouped.keys())   # 과목명 리스트
     result = []
 
     def backtrack(index, current):
@@ -233,7 +233,7 @@ def main():
         sorted_combos = sort_by_short_gaps(valid_combinations)
     elif option == 3:
         print("🔹 공강 요일이 있는 시간표를 생성합니다.")
-        # 💡 공강 요일이 있는 조합이 하나도 없을 경우 자동 대체
+        # 공강 요일이 있는 조합이 하나도 없을 경우 자동 대체
         has_free_day = any(len(summarize_schedule(combo)) < 5 for combo in valid_combinations)
         if not has_free_day:
             print("⚠️ 공강 요일이 있는 조합이 없습니다. 대신 '수업 사이 빈 시간이 적은 시간표'로 대체됩니다.")
