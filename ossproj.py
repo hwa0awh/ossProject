@@ -68,6 +68,7 @@ def select_preference():
         print("1. 늦게 시작하는 시간표")
         print("2. 수업 사이 빈 시간이 적은 시간표")
         print("3. 공강 요일이 있는 시간표")
+        print("※ 선택한 조건에 꼭 맞는 시간표가 없을 경우, 그와 가장 유사한 조합들이 추천될 수 있습니다.")
         choice = input("번호 입력 (1~3): ")
         if choice in ["1","2","3"] :
             return int(choice)
@@ -198,7 +199,7 @@ def print_timetable(combo):
     time_slots = sorted(time_slots)
 
     print("🕒   시간       Mon           Tue           Wed           Thu           Fri")
-    print("--------------------------------------------------------------------------")
+    print("---------------------------------------------------------------------------")
 
     for start, end in time_slots:
         row = f"{start:>5.1f}~{end:<5.1f}  "
@@ -209,7 +210,7 @@ def print_timetable(combo):
 
     # 마지막 줄에 과목명, 콰목코드 출력
     subjects = [sec.subject for sec in combo]
-    print("\n 과목명명   : ", ", ".join(subjects))
+    print("\n 과목명   : ", ", ".join(subjects))
     codes = [sec.code for sec in combo]
     print("\n 과목코드 : ", ", ".join(codes))
 
