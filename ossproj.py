@@ -203,7 +203,7 @@ def print_timetable(combo):
     for start, end in time_slots:
         row = f"{start:>5.1f}~{end:<5.1f}  "
         for day in days:
-            name = timetable[day].get((start, end), "   -----")  # 빈칸이면 ----- 출력
+            name = timetable[day].get((start, end), "  -----")  # 빈칸이면 ----- 출력
             row += f"{name:<12}"  # 칸 고정 너비
         print(row)
 
