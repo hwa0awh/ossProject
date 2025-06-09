@@ -9,28 +9,32 @@ def load_subjects_from_file(filename):
             subject_data = []
             for line in lines:
                 parts = line.strip().split()
-                if len(parts) not in [5, 8]:
+                if len(parts) not in [6, 9]:
+                # 과목명, 분반번호, 과목코드, 요일1, 시작1, 끝1 (6개), 요일2, 시작2, 끝2 포함 시 총 9개
                     print(f"[무시됨] 잘못된 형식: {line.strip()}")
                     continue
                 subject_data.append(parts)
 
                 subject = parts[0]
                 section_id = parts[1]
+                code = parts[2]
 
                 # 시간표 정보 저장
                 time_slots = []
-                time_slots.append((parts[2], float(parts[3]), float(parts[4])))
-                if len(parts) == 8:
-                    time_slots.append((parts[5], float(parts[6]), float(parts[7])))
+                # 첫 번째 요일-시간 정보 저장
+                time_slots.append((parts[3], float(parts[4]), float(parts[5])))
+                # 두 번째 요일 정보가 있다면 추가 저장
+                if len(parts) == 9:
+                    time_slots.append((parts[6], float(parts[7]), float(parts[8])))
 
-                # 클래스 객체 생성
-                section = Subjectsection(subject, section_id, time_slots)
+                # 하나의 분반 정보를 객체로 만들어 리스트에 저장
+                section = Subjectsection(subject, section_id, code, time_slots)
                 subject_sections.append(section)
 
             # 과목명 기준 정렬
             subject_sections.sort(key=lambda sec: sec.subject)
 
-            # 출력
+            # 정렬된 결과 출력
             print("📂 과목명 순 정렬 결과:")
             for section in subject_sections:
                 print(section)
@@ -41,20 +45,23 @@ def load_subjects_from_file(filename):
 
     except FileNotFoundError:
         print(f"[오류] 파일 '{filename}'을 찾을 수 없습니다.")
-        return[]
+        return []
 
+# 과목 한 개 분반 정보를 나타내는 클래스
 class Subjectsection :
-    def __init__(self, subject, section_id, time_slots) :
+    def __init__(self, subject, section_id, code, time_slots) :
         self.subject = subject         # 과목명
-        self.section_id = section_id     # 분반번호
+        self.section_id = section_id   # 분반번호
+        self.code = code               # 과목코드
         self.time_slots = time_slots   # 수업시간
     
     def __str__(self):
-        result = f"{self.subject} 분반 {self.section_id}\n"
+        result = f"{self.subject} 분반 {self.section_id} 코드 {self.code}\n"
         for day, start, end in self.time_slots:
             result += f"  - {day} {start} ~ {end}\n"
         return result    
 
+# 사용자로부터 시간표 조건을 입력받는 함수
 def select_preference():
     while True :
         print("원하는 시간표 조건을 선택하세요 :")
@@ -67,8 +74,9 @@ def select_preference():
         else :
             print("⚠️ 잘못 선택하셨습니다. 다시 입력하세요.\n")
 
+# 과목명을 기준으로 분반 리스트를 묶는 함수
 def group_sections_by_subject(sections):
-    grouped = {}  # 기본 딕셔너리
+    grouped = {}  # 딕셔너리 구조: { 과목명: [분반1, 분반2, ...] }
 
     for sec in sections:
         subject = sec.subject
@@ -81,24 +89,27 @@ def group_sections_by_subject(sections):
 
     return grouped
 
+# 각 과목에서 한 분반만 선택해 조합을 만드는 함수 (백트래킹 사용)
 def generate_combinations(grouped):
-    subjects = list(grouped.keys())
+    subjects = list(grouped.keys())   # 고목명 리스트
     result = []
 
     def backtrack(index, current):
+        # 모든 과목에 대해 분반 선택이 완료되면 저장
         if index == len(subjects):
-            result.append(current[:])  # 깊은 복사
+            result.append(current[:])  # 현재 조합을 깊은 복사해 저장
             return
 
         subject = subjects[index]
         for section in grouped[subject]:
             current.append(section)
             backtrack(index + 1, current)
-            current.pop()
+            current.pop()                 # 백트래킹
 
     backtrack(0, [])
     return result
 
+# 시간표 충돌(겹침)이 있는지 확인하는 함수
 def has_conflict(combo):
     schedule = []
 
@@ -114,6 +125,7 @@ def has_conflict(combo):
     
     return False
 
+# 유효한 시간표 조합만 골라내는 함수
 def filter_valid_combinations(combinations):
     valid = []
     for combo in combinations:
@@ -121,7 +133,8 @@ def filter_valid_combinations(combinations):
             valid.append(combo)
     return valid
 
-def summarize_schedule(combo): # 시간표 요약
+# 조합된 시간표를 요일별로 정리하는 함수 (출력/정렬용)
+def summarize_schedule(combo):
     times_by_day = {}
 
     for sec in combo:
@@ -132,7 +145,7 @@ def summarize_schedule(combo): # 시간표 요약
 
     # 요일별 시간 정렬
     for day in times_by_day:
-        times_by_day[day].sort()
+        times_by_day[day].sort() # 시작 시간 기준 정렬
 
     return times_by_day
 
@@ -165,6 +178,7 @@ def sort_by_free_day(valid_combinations): # option 3 : 공강날이 많은 시�
 
     return sorted(valid_combinations, key=score)
     
+# 최종 시간표 출력 함수
 def print_timetable(combo):
     days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
     timetable = {day: {} for day in days}
@@ -189,11 +203,17 @@ def print_timetable(combo):
     for start, end in time_slots:
         row = f"{start:>5.1f}~{end:<5.1f}  "
         for day in days:
-            name = timetable[day].get((start, end), "   -----")  # ✅ 빈칸이면 ----- 출력
+            name = timetable[day].get((start, end), "   -----")  # 빈칸이면 ----- 출력
             row += f"{name:<12}"  # 칸 고정 너비
         print(row)
 
+    # 마지막 줄에 과목명, 콰목코드 출력
+    subjects = [sec.subject for sec in combo]
+    print("\n 과목명명   : ", ", ".join(subjects))
+    codes = [sec.code for sec in combo]
+    print("\n 과목코드 : ", ", ".join(codes))
 
+# 실행 시작 지점
 def main(): 
     filename = "subjects.txt"
     sections = load_subjects_from_file(filename)
